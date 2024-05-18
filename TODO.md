@@ -1,4 +1,44 @@
 
+polars over pandas?
+https://github.com/pola-rs/polars
+
+parquet/arrow file for all combinations?
+
+any matrix math possiblities for combinations?
+
+python linter/formatter
+
+parallelize outfit generation by slicing up the largest armor type (and distributing artifice as equally as possible)
+
+switch to using numpy?
+https://chatgpt.com/c/8ea94d5f-bddb-46d8-8840-345e1be27af3
+
+    import numpy as np
+
+    # Example of vectorized operation
+    a = np.array([1, 2, 3])
+    b = np.array([4, 5, 6])
+    result = a + b  # This is much faster than using a loop
+
+    import numpy as np
+
+    # Original stats array
+    stats = np.array([17, 74, 33, 82, 51, 31])
+
+    # 2-dimensional weights array
+    weights = np.array([
+        [3, -4, 2, -2, -1, -1],
+        [-2, 1, 2, -2, -1, -1],
+        # Add up to 252 sets of weights
+    ])
+
+    # Add the weights to the stats array using broadcasting
+    results = stats + weights
+
+    print(results)
+
+
+
 start here: get `generate_outfits` to generate the permutations of outfits including useful artifice combinations
 - change outfit to store the int/long of the armor that it includes
 - make armor list a dict of int/long of instance id to the armor piece?

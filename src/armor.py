@@ -13,8 +13,8 @@ def random_64_int():
 @dataclass
 class Armor:
     item_name: str = "Generic Armor"
-    item_hash: str = field(default_factory=random_64_int)
-    instance_id: str = field(default_factory=random_64_int)
+    item_hash: int = field(default_factory=random_64_int)
+    instance_id: int = field(default_factory=random_64_int)
     rarity: str = "Legendary"
     slot: str = "Helmet"
     power: int = 0 
@@ -67,14 +67,14 @@ class ProfileArmor:
         items = {}
         for character_id in profile['profile']['data']['characterIds']:
             for item in profile['characterEquipment']['data'][character_id]['items']:
-                instance_id = item.get('itemInstanceId', item['itemHash'])
+                instance_id = int(item.get('itemInstanceId', item['itemHash']))
                 items[instance_id] = item
             for item in profile['characterInventories']['data'][character_id]['items']:
-                instance_id = item.get('itemInstanceId', item['itemHash'])
+                instance_id = int(item.get('itemInstanceId', item['itemHash']))
                 items[instance_id] = item
 
         for item in profile['profileInventory']['data']['items']:
-            instance_id = item.get('itemInstanceId', item['itemHash'])
+            instance_id = int(item.get('itemInstanceId', item['itemHash']))
             items[instance_id] = item
 
         return items
@@ -83,7 +83,7 @@ class ProfileArmor:
     def __get_item_component_instances(self, profile):
         item_component_instances = {}
         for instance_id, instance in profile['itemComponents']['instances']['data'].items():
-            item_component_instances[instance_id] = instance
+            item_component_instances[int(instance_id)] = instance
         
         return item_component_instances
 
@@ -91,7 +91,7 @@ class ProfileArmor:
     def __get_item_component_sockets(self, profile):
         item_component_sockets = {}
         for instance_id, sockets in profile['itemComponents']['sockets']['data'].items():
-            item_component_sockets[instance_id] = sockets['sockets']
+            item_component_sockets[int(instance_id)] = sockets['sockets']
         
         return item_component_sockets
 
@@ -133,8 +133,8 @@ class ProfileArmor:
         if item is None or 'itemHash' not in item or 'itemInstanceId' not in item:
             return None
 
-        instance_id = item['itemInstanceId']
-        item_hash = item['itemHash']
+        instance_id = int(item['itemInstanceId'])
+        item_hash = int(item['itemHash'])
         item_definition = self.item_definitions[str(item_hash)]
         item_type = item_definition['itemType']
 

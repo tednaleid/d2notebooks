@@ -2,6 +2,21 @@
 polars over pandas?
 https://github.com/pola-rs/polars
 
+# questions
+- Do we care at all about outfits without an exotic in them?  I think we don't
+
+- give duckdb a try?
+
+- have user enter minimum values for viable outfits
+  - ex: able to get 100 resilience + 100 of something else?
+
+- for each piece of armor, look for an outfit that it is part of that is not eclipsed by another
+
+
+identify possible double 100 and triple 100 combos
+
+
+
 parquet/arrow file for all combinations?
 
 any matrix math possiblities for combinations?
@@ -12,30 +27,6 @@ parallelize outfit generation by slicing up the largest armor type (and distribu
 
 switch to using numpy?
 https://chatgpt.com/c/8ea94d5f-bddb-46d8-8840-345e1be27af3
-
-    import numpy as np
-
-    # Example of vectorized operation
-    a = np.array([1, 2, 3])
-    b = np.array([4, 5, 6])
-    result = a + b  # This is much faster than using a loop
-
-    import numpy as np
-
-    # Original stats array
-    stats = np.array([17, 74, 33, 82, 51, 31])
-
-    # 2-dimensional weights array
-    weights = np.array([
-        [3, -4, 2, -2, -1, -1],
-        [-2, 1, 2, -2, -1, -1],
-        # Add up to 252 sets of weights
-    ])
-
-    # Add the weights to the stats array using broadcasting
-    results = stats + weights
-
-    print(results)
 
 
 

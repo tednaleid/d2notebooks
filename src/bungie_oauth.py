@@ -7,7 +7,7 @@ import requests
 import os
 import base64
 import queue
-import json
+import webbrowser
 
 class BungieAuth:
     def __init__(self, client_id):
@@ -52,7 +52,7 @@ class BungieAuth:
     def __pkce_verifier(self, length):
         return base64.urlsafe_b64encode(os.urandom(length)).decode('utf-8')
 
-    def __login_with_pkce(self):
+    def __login_with_pkce(self, open_browser=True):
         q = queue.Queue()
         self.__create_https_server(7777, 'cert.pem', 'key.pem', q)
 
@@ -61,6 +61,9 @@ class BungieAuth:
         authorization_url = f"https://www.bungie.net/en/oauth/authorize?client_id={self.client_id}&response_type=code&state={state}&redirect_uri={self.redirect_url}"
 
         print(f"Please go to the following URL and authorize the app: {authorization_url}")
+
+        if open_browser:
+            webbrowser.open(authorization_url)
 
         query_params = q.get()
 
@@ -83,8 +86,8 @@ class BungieAuth:
         response = requests.post(url, data=data, headers=headers)
         return response.json()
 
-    def refresh_oauth_token(self):
-        code = self.__login_with_pkce()
+    def refresh_oauth_token(self, open_browser=True):
+        code = self.__login_with_pkce(open_browser)
         token_json = self.__get_token_json(code)
         self.token = token_json['access_token']
         return self.token

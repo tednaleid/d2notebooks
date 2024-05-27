@@ -92,7 +92,9 @@ class BungieApi:
         headers = self.__default_headers() 
         headers['Authorization'] = f'Bearer {access_token}'
 
-        url = f'https://www.bungie.net/Platform/Destiny2/{membership_type}/Profile/{membership_id}/?components={ ','.join(str(c) for c in components)}'
+        joined_components = ','.join(str(c) for c in components)
+
+        url = f'https://www.bungie.net/Platform/Destiny2/{membership_type}/Profile/{membership_id}/?components={joined_components}'
 
         response = requests.get(url, headers=headers)
         response.raise_for_status()

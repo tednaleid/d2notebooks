@@ -4,3 +4,6 @@
 - or require the ability to hit double/triple 100 combos
 - or state outfit combos they don't care about (ex: over 70 mobility on warlock)
 - exotic armor allow list?
+
+
+- treat exotic as artifice as we can enhance it in TFS

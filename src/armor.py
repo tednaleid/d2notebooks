@@ -1,7 +1,6 @@
 # functions to parse the profile data and create the Dict of Armor the user has on all characters and in the vault
 from dataclasses import dataclass, field
 from typing import Dict
-import pandas as pd
 import random
 
 random.seed(42)

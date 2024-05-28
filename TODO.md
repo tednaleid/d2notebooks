@@ -10,4 +10,3 @@
 
 
 - are we missing stats on old exotic armor where they can be above 68?
-- get peak combos to show where a piece of armor might be redundant as its only in armor combos that other armor is in 

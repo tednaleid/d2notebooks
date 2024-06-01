@@ -3,6 +3,14 @@ from dataclasses import dataclass, field
 from typing import Dict
 import random
 
+from itertools import product
+from collections import defaultdict
+from collections import namedtuple
+
+import polars as pl
+from polars import col
+from itertools import combinations
+
 random.seed(42)
 
 def random_64_int():
@@ -248,3 +256,276 @@ class ProfileArmor:
                 d2_class=d2_class
             )
             return armor
+
+class ProfileOutfits:
+
+    # masterworking helmet, gauntlets, chest armor, leg armor, and class item gives a +10 bonus to each stat in an outfit
+    FULL_MASTERWORK_STAT_BONUS = 10
+    
+    NO_EXOTIC_HASH = -1
+
+    def __init__(self, armor_dict):
+        self.armor_dict = armor_dict
+        self.artifice_permutations = {i: self.generate_artifice_permutations(i) for i in range(6)}
+
+    # we want to generate outfits for a given class
+    # The high-level algorithm is:
+
+    # 1. filter armor to only include armor for the given class, also filter out class items
+    # 2. segregate the armor by whether it is exotic or not
+    # 3. group the exotic and non-exotic armor by slot
+    def filter_and_group_armor(self, d2_class, slots = ["Helmet", "Gauntlets", "Chest Armor", "Leg Armor", "Class Item"]):
+        exotic_armor = defaultdict(list)
+        non_exotic_armor = defaultdict(list)
+        for armor in self.armor_dict.values():
+            if armor.d2_class == d2_class and armor.slot in slots:
+                if armor.is_exotic:
+                    exotic_armor[armor.slot].append(armor)
+                else:
+                    non_exotic_armor[armor.slot].append(armor)
+
+        if "Class Item" in non_exotic_armor:
+            # class items all have the same stats, the only option is if one is artifice.  Pick one and remove the rest
+            for armor in non_exotic_armor["Class Item"]:
+                if armor.is_artifice:
+                    non_exotic_armor["Class Item"] = [armor]
+                    break
+
+            if len(non_exotic_armor["Class Item"]) > 1:
+                non_exotic_armor["Class Item"] = [non_exotic_armor["Class Item"][0]]
+
+        return exotic_armor, non_exotic_armor
+
+    # 4. generate all possible outfits using non-exotic armor
+    # 5. add in all possible outfits using a single piece of exotic armor
+    def generate_class_outfits(self, d2_class):
+        outfits = []
+
+        # filter armor to only include armor for the given class and slots
+        exotic_armor, non_exotic_armor = self.filter_and_group_armor(d2_class, ["Helmet", "Gauntlets", "Chest Armor", "Leg Armor", "Class Item"])
+
+        # append all possible non-exotic armor combinations
+
+        # do we care about non-exotic armor?
+        self.append_outfit_permutations(outfits, non_exotic_armor["Helmet"], non_exotic_armor["Gauntlets"], non_exotic_armor["Chest Armor"], non_exotic_armor["Leg Armor"], non_exotic_armor["Class Item"])
+
+        # we can only have exotic armor in a single slot, add all outfits with a single slot of exotic armor
+        self.append_outfit_permutations(outfits, exotic_armor["Helmet"], non_exotic_armor["Gauntlets"], non_exotic_armor["Chest Armor"], non_exotic_armor["Leg Armor"], non_exotic_armor["Class Item"])
+        self.append_outfit_permutations(outfits, non_exotic_armor["Helmet"], exotic_armor["Gauntlets"], non_exotic_armor["Chest Armor"], non_exotic_armor["Leg Armor"], non_exotic_armor["Class Item"])
+        self.append_outfit_permutations(outfits, non_exotic_armor["Helmet"], non_exotic_armor["Gauntlets"], exotic_armor["Chest Armor"], non_exotic_armor["Leg Armor"], non_exotic_armor["Class Item"])
+        self.append_outfit_permutations(outfits, non_exotic_armor["Helmet"], non_exotic_armor["Gauntlets"], non_exotic_armor["Chest Armor"], exotic_armor["Leg Armor"], non_exotic_armor["Class Item"])
+
+        # as of right now, there is no exotic class item.  there will be in TFS, but unless it has stats better than a legendary class item, we don't care
+        # append_outfit_permutations(outfits, non_exotic_armor["Helmet"], non_exotic_armor["Gauntlets"], non_exotic_armor["Chest Armor"], non_exotic_armor["Leg Armor"], exotic_armor["Class Item"])
+
+        return outfits
+
+    def generate_artifice_permutations(self, num_artifice):
+        # Generate all permutations artifice mods that could be assigned to each stat
+        all_permutations = product(range(0, num_artifice + 1), repeat=6)
+
+        # Filter the permutations to only include ones with that have the right number of artifice applied
+        valid_permutations = [perm for perm in all_permutations if sum(perm) == num_artifice]
+
+        # for each artifice in a slot, it applies a +3 bonus to that stat
+        return [tuple(i*3 for i in perm) for perm in valid_permutations]
+
+    def round_to_useful_tier(self, stat):
+        # stats above 100 aren't useful.  T10 is the highest tier
+        if stat > 100:
+            return 100
+
+        # half tiers can be useful as there are 5 point mods, so we want to round down to the nearest 5
+        return stat - (stat % 5)
+
+        # EXPERMIENTAL: round to the nearest 10 and ignore half tiers
+        # return stat - (stat % 10)
+
+    def append_outfit_permutations(self, outfits, helmets, gauntlets, chest_armors, leg_armors, class_items):
+        for helmet, gauntlet, chest_armor, leg_armor, class_item in product(helmets, gauntlets, chest_armors, leg_armors, class_items):
+            # we want to add the masterwork stat bonus
+            # armor pieces have base stats, without any mods or masterworking
+            base_mobility = self.FULL_MASTERWORK_STAT_BONUS + helmet.mobility + gauntlet.mobility + chest_armor.mobility + leg_armor.mobility + class_item.mobility
+            base_resilience = self.FULL_MASTERWORK_STAT_BONUS + helmet.resilience + gauntlet.resilience + chest_armor.resilience + leg_armor.resilience + class_item.resilience
+            base_recovery = self.FULL_MASTERWORK_STAT_BONUS + helmet.recovery + gauntlet.recovery + chest_armor.recovery + leg_armor.recovery + class_item.recovery
+            base_discipline = self.FULL_MASTERWORK_STAT_BONUS + helmet.discipline + gauntlet.discipline + chest_armor.discipline + leg_armor.discipline + class_item.discipline
+            base_intellect = self.FULL_MASTERWORK_STAT_BONUS + helmet.intellect + gauntlet.intellect + chest_armor.intellect + leg_armor.intellect + class_item.intellect
+            base_strength = self.FULL_MASTERWORK_STAT_BONUS + helmet.strength + gauntlet.strength + chest_armor.strength + leg_armor.strength + class_item.strength
+
+            num_artifice = helmet.is_artifice + gauntlet.is_artifice + chest_armor.is_artifice + leg_armor.is_artifice + class_item.is_artifice
+
+            # should be at most one exotic armor piece in an outfit
+            exotic_hash = self.NO_EXOTIC_HASH
+            for armor in [helmet, gauntlet, chest_armor, leg_armor, class_item]:
+                if armor.is_exotic:
+                    exotic_hash = armor.item_hash
+                    break
+
+            self.append_outfit_permutation(outfits, 
+                                           base_mobility, 
+                                           base_resilience, 
+                                           base_recovery, 
+                                           base_discipline, 
+                                           base_intellect, 
+                                           base_strength, 
+                                           helmet.instance_id, 
+                                           gauntlet.instance_id, 
+                                           chest_armor.instance_id, 
+                                           leg_armor.instance_id, 
+                                           class_item.instance_id, 
+                                           exotic_hash, 
+                                           num_artifice)
+
+    # recursively apply any artifice to the outfit
+    def append_outfit_permutation(self, outfits, mobility, resilience, recovery, discipline, intellect, strength, helmet, gauntlets, chest_armor, leg_armor, class_item, exotic_hash, num_artifice):
+        if num_artifice == 0:
+            outfits.append((
+                self.round_to_useful_tier(mobility),
+                self.round_to_useful_tier(resilience),
+                self.round_to_useful_tier(recovery),
+                self.round_to_useful_tier(discipline),
+                self.round_to_useful_tier(intellect),
+                self.round_to_useful_tier(strength),
+                helmet,
+                gauntlets,
+                chest_armor,
+                leg_armor,
+                class_item,
+                exotic_hash,
+                num_artifice
+            ))
+        else:
+
+            # create a set of stats that we can use to only build outfits with a unique set of stats, some combinations don't create unique useful tiers
+            # ex: if mobility is 27 adding +3 is the same as adding +6, they both round to 30
+            useful_stats_permutations = set()
+
+            for artifice_bonus in self.artifice_permutations[num_artifice]:
+                useful_stats_permutations.add(
+                    (
+                        self.round_to_useful_tier(mobility + artifice_bonus[0]),
+                        self.round_to_useful_tier(resilience + artifice_bonus[1]),  
+                        self.round_to_useful_tier(recovery + artifice_bonus[2]),  
+                        self.round_to_useful_tier(discipline + artifice_bonus[3]),
+                        self.round_to_useful_tier(intellect + artifice_bonus[4]),
+                        self.round_to_useful_tier(strength + artifice_bonus[5])
+                    )
+                )
+            for useful_stats in useful_stats_permutations:
+                outfits.append((
+                    useful_stats[0],
+                    useful_stats[1],
+                    useful_stats[2],
+                    useful_stats[3],
+                    useful_stats[4],
+                    useful_stats[5],
+                    helmet,
+                    gauntlets,
+                    chest_armor,
+                    leg_armor,
+                    class_item,
+                    exotic_hash,
+                    num_artifice
+                ))
+
+    # identify all non-class item armor that has the same or worse stats than another piece of armor of the same rarity and type
+    def find_eclipsed_armor(self):
+        eclipsed_armor = []
+        armor_list = list(self.armor_dict.values())
+
+        # sort by power level, low to high
+        armor_list.sort(key=lambda x: x.power)
+
+        for i, armor in enumerate(armor_list):
+            if armor.slot == "Class Item":
+                continue
+            for other_armor in armor_list[i+1:]:
+                if armor.rarity != other_armor.rarity:
+                    continue
+                # only compare exotic armor pieces that are the same item
+                if armor.rarity == "Exotic" and armor.item_hash != other_armor.item_hash:
+                    continue
+                if armor.class_slot == other_armor.class_slot and armor.instance_id != other_armor.instance_id:
+                    if armor.mobility <= other_armor.mobility and armor.resilience <= other_armor.resilience and armor.recovery <= other_armor.recovery and armor.discipline <= other_armor.discipline and armor.intellect <= other_armor.intellect and armor.strength <= other_armor.strength:
+                        eclipsed_armor.append((armor, other_armor))
+                    elif other_armor.mobility <= armor.mobility and other_armor.resilience <= armor.resilience and other_armor.recovery <= armor.recovery and other_armor.discipline <= armor.discipline and other_armor.intellect <= armor.intellect and other_armor.strength <= armor.strength:
+                        eclipsed_armor.append((other_armor, armor))
+        return eclipsed_armor
+
+class PinnacleOutfits:
+    def __init__(self, outfits):
+        self.outfits = outfits
+        self.weighted_outfits_df = self.__generate_weighted_outfits_df(outfits)
+        self.weighted_outfits_max_df = self.__weighted_outfits_max(self.weighted_outfits_df)
+        self.pinnacle_outfits_df = self.__pinnacle_outfits_df(self.weighted_outfits_df, self.weighted_outfits_max_df)
+
+    # Create weighted columns for stat combinations, this weight is used to determine how much that stat is worth in that combination
+    # n adding that stat to all other stats to determine the outfits worth for that combo
+    # this lets us compare two outfits and allow the spike in one stat to offset some lesser stats in others we don't care about for that combo
+    # we can then search through and find the maximum values for each combo and keep those and reject outfits/armor pieces that aren't at a max
+    #
+    # `max_stats_to_combo` is the maximum number of stats to combine in a weighted sum 
+    # ex: 3 would give us: 1 stat: mob, res, rec, ... + 2 stats: mob/res, mob/rec ... + 3 stats: mob/res/rec, mob/res/dis, ...
+    # `weight` is how much we want to value the stats associated with the weighted column
+    def __generate_weighted_outfits_df(self, outfits, max_stats_to_combo = 3, weight = 10):
+        column_names = ['mobility', 'resilience', 'recovery', 'discipline', 'intellect', 'strength', 'helmet', 'gauntlets', 'chest_armor', 'leg_armor', 'class_item', 'exotic_hash', 'num_artifice']
+
+        schema = {}
+
+        for column_name in column_names:
+            schema[column_name] = pl.Int64
+
+        outfits_df = pl.DataFrame(outfits, schema=schema)
+
+        # the stats that can be weighted
+        stats = ['mobility', 'resilience', 'recovery', 'discipline', 'intellect', 'strength']
+
+        # Generate the weighted columns for each combination
+        weighted_columns = []
+
+        for stat_count in range(1, max_stats_to_combo + 1):
+            combos = list(combinations(stats, stat_count))
+
+            for combo in combos:
+                # Create a list of the column expressions for the weighted sum
+                column_exprs = [(col(stat) * (weight // stat_count) if stat in combo else col(stat)) for stat in stats]
+
+                # Create the alias for the weighted column
+                alias = 'weighted_' + '_'.join(combo)
+
+                # Add the weighted column to the list
+                weighted_columns.append(sum(column_exprs).alias(alias))
+
+        return outfits_df.with_columns(*weighted_columns)
+
+    # find the max for each weighted column, group by exotic hash so we find the best outfit for each exotic armor piece
+    def __weighted_outfits_max(self, outfits_df):
+        return outfits_df.group_by('exotic_hash').max()
+
+    def __pinnacle_outfits_df(self, weighted_outfits_df, weighted_outfits_max_df):
+        # filter the original DataFrame to only include rows where it has any `weighted_*` column that matches the max value for that exotic_hash
+
+        # Get the column names starting with 'weighted_'
+        weighted_columns = [col for col in weighted_outfits_df.columns if col.startswith('weighted_')]
+
+        # join each outfit with the max outfit for that exotic_hash, so we can compare the weighted stats to the max stats for the exotic this outfit uses
+        joined_outfits_df = weighted_outfits_df.join(weighted_outfits_max_df, on='exotic_hash', suffix='_max')
+
+        # check if the weighted column for this outfit is the same as the max/best outfit for this exotic
+        conditions = [pl.col(name) == pl.col(f"{name}_max") for name in weighted_columns]
+
+        # Create a combined condition that is True if any of the conditions is True
+        combined_condition = conditions[0]
+        for condition in conditions[1:]:
+            combined_condition = combined_condition | condition
+
+        # filter rows where the outfit has at least one column that is the max value for that exotic
+        pinnacle_outfits_df = joined_outfits_df.filter(combined_condition)
+        # eclipsed_outfits_df = joined_outfits_df.filter(~combined_condition)
+
+        # add a total_stats column to the dataframe that sums mobility, resilience, recovery, discipline, intellect, and strength
+        pinnacle_outfits_df = pinnacle_outfits_df.with_columns(
+            (col('mobility') + col('resilience') + col('recovery') + col('discipline') + col('intellect') + col('strength')).alias('total_stats')
+        )
+
+        return pinnacle_outfits_df

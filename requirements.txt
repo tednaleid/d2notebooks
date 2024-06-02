@@ -1,0 +1,9 @@
+requests
+pandas
+matplotlib
+polars
+pyarrow
+ipykernel
+ipython
+jupyter_client
+jupyter_core

@@ -2,6 +2,7 @@
 from dataclasses import dataclass, field
 from typing import Dict
 import random
+import json
 
 from itertools import product
 from collections import defaultdict
@@ -171,6 +172,29 @@ class ProfileArmor:
                 print(f'No sockets for item {item_hash} - {item_definition}')
                 return None
 
+            intrinsic_stats = item_definition.get('investmentStats', None)
+            if intrinsic_stats is not None:
+                for stat in intrinsic_stats:
+                    stat_hash = str(stat['statTypeHash'])
+                    stat_value = stat['value']
+
+                    if stat_value == 0:
+                        continue
+                    elif stat_hash == self.MOBILITY_ID:
+                        mobility += stat_value
+                    elif stat_hash == self.RESILIENCE_ID:
+                        resilience += stat_value
+                    elif stat_hash == self.RECOVERY_ID:
+                        recovery += stat_value
+                    elif stat_hash == self.DISCIPLINE_ID:
+                        discipline += stat_value
+                    elif stat_hash == self.INTELLECT_ID:
+                        intellect += stat_value
+                    elif stat_hash == self.STRENGTH_ID:
+                        strength += stat_value
+                    else:
+                        print(f'Unknown stat hash {stat_hash} for plug {plug_hash}')
+
             for socket in sockets:
                 # if it doesn't have a `plugHash` we don't care about it
                 if 'plugHash' not in socket:
@@ -183,8 +207,6 @@ class ProfileArmor:
                 if plug_definition is None:
                     print(f'No plug definition for plug {plug_hash}')
                     continue
-
-                # print(json.dumps(plug_definition, indent=4))
 
                 plug_name = plug_definition['displayProperties']['name']
 
@@ -336,10 +358,10 @@ class ProfileOutfits:
             return 100
 
         # half tiers can be useful as there are 5 point mods, so we want to round down to the nearest 5
-        return stat - (stat % 5)
+        # return stat - (stat % 5)
 
         # EXPERMIENTAL: round to the nearest 10 and ignore half tiers
-        # return stat - (stat % 10)
+        return stat - (stat % 10)
 
     def append_outfit_permutations(self, outfits, helmets, gauntlets, chest_armors, leg_armors, class_items):
         for helmet, gauntlet, chest_armor, leg_armor, class_item in product(helmets, gauntlets, chest_armors, leg_armors, class_items):
@@ -455,9 +477,10 @@ class ProfileOutfits:
 class PinnacleOutfits:
     def __init__(self, outfits):
         self.outfits = outfits
-        self.weighted_outfits_df = self.__generate_weighted_outfits_df(outfits)
-        self.weighted_outfits_max_df = self.__weighted_outfits_max(self.weighted_outfits_df)
-        self.pinnacle_outfits_df = self.__pinnacle_outfits_df(self.weighted_outfits_df, self.weighted_outfits_max_df)
+        weighted_outfits_df = self.__generate_weighted_outfits_df(outfits)
+        self.weighted_outfits_max_df = self.__weighted_outfits_max(weighted_outfits_df)
+        self.weighted_outfits_df = self.__joined_outfits_max(weighted_outfits_df, self.weighted_outfits_max_df)
+        self.pinnacle_outfits_df = self.__pinnacle_outfits_df(self.weighted_outfits_df)
 
     # Create weighted columns for stat combinations, this weight is used to determine how much that stat is worth in that combination
     # n adding that stat to all other stats to determine the outfits worth for that combo
@@ -466,8 +489,8 @@ class PinnacleOutfits:
     #
     # `max_stats_to_combo` is the maximum number of stats to combine in a weighted sum 
     # ex: 3 would give us: 1 stat: mob, res, rec, ... + 2 stats: mob/res, mob/rec ... + 3 stats: mob/res/rec, mob/res/dis, ...
-    # `weight` is how much we want to value the stats associated with the weighted column
-    def __generate_weighted_outfits_df(self, outfits, max_stats_to_combo = 3, weight = 10):
+    # `weight` is how much we want to value the stats associated with the weighted column over unweighted stats
+    def __generate_weighted_outfits_df(self, outfits, max_stats_to_combo = 3, weight = 2):
         column_names = ['mobility', 'resilience', 'recovery', 'discipline', 'intellect', 'strength', 'helmet', 'gauntlets', 'chest_armor', 'leg_armor', 'class_item', 'exotic_hash', 'num_artifice']
 
         schema = {}
@@ -488,7 +511,7 @@ class PinnacleOutfits:
 
             for combo in combos:
                 # Create a list of the column expressions for the weighted sum
-                column_exprs = [(col(stat) * (weight // stat_count) if stat in combo else col(stat)) for stat in stats]
+                column_exprs = [(col(stat) * weight if stat in combo else col(stat)) for stat in stats]
 
                 # Create the alias for the weighted column
                 alias = 'weighted_' + '_'.join(combo)
@@ -502,14 +525,14 @@ class PinnacleOutfits:
     def __weighted_outfits_max(self, outfits_df):
         return outfits_df.group_by('exotic_hash').max()
 
-    def __pinnacle_outfits_df(self, weighted_outfits_df, weighted_outfits_max_df):
+    def __joined_outfits_max(self, weighted_outfits_df, weighted_outfits_max_df):
+        return weighted_outfits_df.join(weighted_outfits_max_df, on='exotic_hash', suffix='_max')
+
+    def __pinnacle_outfits_df(self, joined_outfits_df):
         # filter the original DataFrame to only include rows where it has any `weighted_*` column that matches the max value for that exotic_hash
 
-        # Get the column names starting with 'weighted_'
-        weighted_columns = [col for col in weighted_outfits_df.columns if col.startswith('weighted_')]
-
-        # join each outfit with the max outfit for that exotic_hash, so we can compare the weighted stats to the max stats for the exotic this outfit uses
-        joined_outfits_df = weighted_outfits_df.join(weighted_outfits_max_df, on='exotic_hash', suffix='_max')
+        # Get the column names starting with 'weighted_' and don't end in '_max'
+        weighted_columns = [col for col in joined_outfits_df.columns if (col.startswith('weighted_') and not col.endswith('_max'))]
 
         # check if the weighted column for this outfit is the same as the max/best outfit for this exotic
         conditions = [pl.col(name) == pl.col(f"{name}_max") for name in weighted_columns]

@@ -2,10 +2,11 @@
 
 I'm using VSCode's python and jupyter plugins to run the notebook: 
 
+* https://marketplace.visualstudio.com/items?itemName=ms-python.python
+* https://marketplace.visualstudio.com/items?itemName=ms-toolsai.jupyter
 
-https://marketplace.visualstudio.com/items?itemName=ms-python.python
-https://marketplace.visualstudio.com/items?itemName=ms-toolsai.jupyter
 
+## Install pyenv-virtualenv
 
 I use [pyenv](https://github.com/pyenv/pyenv) and [pyenv-virtualenv](https://github.com/pyenv/pyenv-virtualenv) for managing python and installing virtual environments.  On the Mac, they can be installed with homebrew using:
 
@@ -28,6 +29,17 @@ else
   echo "pyenv install 3.12.2"
 fi
 ```
+
+## Create a Python Envirnoment and Install Dependencies
+
+Then run `./mkenv.sh` from the command-line to install the version of Python
+defined in .python-version, create the virtual environment named in that file,
+and install the Python dependencies needed by this project using pip.
+
+Alternatively, you'll learn a bit more about how pyenv works if you follow the
+alternative instructions below:
+
+### Alternative (manual) Instructions
 
 Install python and create a new virtual environment for this notebook with:
 
@@ -56,5 +68,13 @@ pyenv versions
   3.12.2/envs/d2notebooks-3.12.2
 * d2notebooks-3.12.2 --> /Users/<your user>/.pyenv/versions/3.12.2/envs/d2notebooks-3.12.2 (set by /Users/<your user>/<path to>/d2notebooks/.python-version)
 ```
+
+Python (pip) typically stores dependencies in `requirements.txt` (or other modern replacements), install them with:
+
+```
+pip install -r requirements.txt
+```
+
+## Choose the Python kernel in VSCode
 
 When you run the first python cell, VSCode will prompt you for the kernel to use.  You should be able to pick the `d2notebooks-3.12.2` kernel.

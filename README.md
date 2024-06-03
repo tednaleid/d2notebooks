@@ -78,3 +78,9 @@ pip install -r requirements.txt
 ## Choose the Python kernel in VSCode
 
 When you run the first python cell, VSCode will prompt you for the kernel to use.  You should be able to pick the `d2notebooks-3.12.2` kernel.
+
+## Notebooks
+
+- d2profile.ipynb - this downloads your account profile from bungie.net.  This should be run first to download files to the `data` directory.
+- d2armor.ipynb - this is the armor analysis notebook.  It assumes that d2profile.ipynb has been run successfully first.
+- d2utils.ipynb - an optional notebook that can download manifest files from bungie.net for grep/browse capability.

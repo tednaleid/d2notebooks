@@ -1,12 +1,9 @@
 # functions to parse the profile data and create the Dict of Armor the user has on all characters and in the vault
 from dataclasses import dataclass, field
-from typing import Dict
 import random
-import json
 
 from itertools import product
 from collections import defaultdict
-from collections import namedtuple
 
 import polars as pl
 from polars import col
@@ -193,7 +190,7 @@ class ProfileArmor:
                     elif stat_hash == self.STRENGTH_ID:
                         strength += stat_value
                     else:
-                        print(f'Unknown stat hash {stat_hash} for plug {plug_hash}')
+                        print(f'Unknown stat hash {stat_hash} in intrinsic stats of item {item_hash}')
 
             for socket in sockets:
                 # if it doesn't have a `plugHash` we don't care about it

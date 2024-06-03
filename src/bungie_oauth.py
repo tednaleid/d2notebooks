@@ -6,7 +6,6 @@ from urllib.parse import urlparse, parse_qs
 import requests
 import os
 import base64
-import queue
 import webbrowser
 
 class BungieAuth:

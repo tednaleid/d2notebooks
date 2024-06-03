@@ -52,7 +52,7 @@ class BungieApi:
         return character_ids_and_classes
 
     def get_manifest(self):
-        url = f'https://www.bungie.net/Platform/Destiny2/Manifest/'
+        url = 'https://www.bungie.net/Platform/Destiny2/Manifest/'
 
         response = requests.get(url, headers=self.__default_headers())
         response.raise_for_status()

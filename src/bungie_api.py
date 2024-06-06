@@ -18,6 +18,15 @@ class BungieApi:
         response = requests.get(url, headers=self.__default_headers())
         data = response.json()
 
+        # write the response to data/primary_membership_id_and_type.json
+        with open("data/primary_membership_id_and_type.json", "w") as f:
+            f.write(str(data))
+
+        # the Bungie API uses 1 as the "error code" for success
+        if "ErrorCode" in data and data["ErrorCode"] != 1:
+            print(f"Error code: {data['ErrorCode']}  Message: {data['Message']}")
+            return (None, None)
+
         for player in data["Response"]:
             membership_id = player["membershipId"]
             membership_type = player["membershipType"]
@@ -39,7 +48,7 @@ class BungieApi:
                 print(f"Crosave override found for {membership_id}")
                 return membership_id, membership_type
 
-        return None
+        return (None, None)
 
     def get_character_ids_and_classes(self, membership_id, membership_type):
         url = f"https://www.bungie.net/Platform/Destiny2/{membership_type}/Profile/{membership_id}/?components=200"

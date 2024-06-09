@@ -30,6 +30,13 @@ class ArmorPinnacleStats:
 
     # a dict of the exotic armor name to a set of PinnacleStats combinations that were in pinnacle outfits
     exotic_to_pinnacle_stats: dict = field(default_factory=lambda: {})
+    _exotic_name_max_length = None
+
+    @property
+    def exotic_name_max_length(self):
+        if self._exotic_name_max_length == None:
+            self._exotic_name_max_length = max(len(s) for s in self.exotic_to_pinnacle_stats.keys() )
+        return self._exotic_name_max_length
 
     @property
     def item_name(self):
@@ -94,7 +101,7 @@ class ArmorPinnacleStats:
                     if stat_combination.is_unique
                 ]
             )
-            string += f"\n\t {exotic} - {unique_stat_combinations} - {joined_stat_combinations}"
+            string += f"\n  {exotic: <{self.exotic_name_max_length}} {unique_stat_combinations} - {joined_stat_combinations}"
 
         return string
 

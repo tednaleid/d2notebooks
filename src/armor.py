@@ -637,14 +637,14 @@ class PinnacleOutfits:
         self.pinnacle_outfits_df = self.__pinnacle_outfits_df(self.weighted_outfits_df)
 
     # Create weighted columns for stat combinations, this weight is used to determine how much that stat is worth in that combination
-    # n adding that stat to all other stats to determine the outfits worth for that combo
+    # adding that stat to all other stats to determine the outfits worth for that combo
     # this lets us compare two outfits and allow the spike in one stat to offset some lesser stats in others we don't care about for that combo
     # we can then search through and find the maximum values for each combo and keep those and reject outfits/armor pieces that aren't at a max
     #
-    # `max_stats_to_combo` is the maximum number of stats to combine in a weighted sum
-    # ex: 3 would give us: 1 stat: mob, res, rec, ... + 2 stats: mob/res, mob/rec ... + 3 stats: mob/res/rec, mob/res/dis, ...
+    # `stat_count` is the number of stats we want to combine in a weighted sum.
+    # a value of `3` (the default) would give us all 3 stat combos: mob/res/rec, mob/res/dis, mob/res/int, ...
     # `weight` is how much we want to value the stats associated with the weighted column over unweighted stats
-    def __generate_weighted_outfits_df(self, outfits, max_stats_to_combo=3, weight=2):
+    def __generate_weighted_outfits_df(self, outfits, stat_count=3, weight=2):
         column_names = [
             "mobility",
             "resilience",
@@ -681,21 +681,19 @@ class PinnacleOutfits:
         # Generate the weighted columns for each combination
         weighted_columns = []
 
-        for stat_count in range(1, max_stats_to_combo + 1):
-            combos = list(combinations(stats, stat_count))
+        combos = list(combinations(stats, stat_count))
 
-            for combo in combos:
-                # Create a list of the column expressions for the weighted sum
-                column_exprs = [
-                    (col(stat) * weight if stat in combo else col(stat))
-                    for stat in stats
-                ]
+        for combo in combos:
+            # Create a list of the column expressions for the weighted sum
+            column_exprs = [
+                (col(stat) * weight if stat in combo else col(stat)) for stat in stats
+            ]
 
-                # Create the alias for the weighted column
-                alias = "weighted_" + "_".join(combo)
+            # Create the alias for the weighted column
+            alias = "weighted_" + "_".join(combo)
 
-                # Add the weighted column to the list
-                weighted_columns.append(sum(column_exprs).alias(alias))
+            # Add the weighted column to the list
+            weighted_columns.append(sum(column_exprs).alias(alias))
 
         return outfits_df.with_columns(*weighted_columns)
 

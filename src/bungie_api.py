@@ -121,3 +121,12 @@ class BungieApi:
 
         data = response.json()["Response"]
         return data
+
+    def get_presentation_node(self, presentation_node_hash):
+        url = f"https://www.bungie.net/Platform/Destiny2/Manifest/DestinyPresentationNodeDefinition/{presentation_node_hash}/"
+
+        response = requests.get(url, headers=self.__default_headers())
+        response.raise_for_status()
+
+        data = response.json()["Response"]
+        return data

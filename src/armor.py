@@ -34,6 +34,7 @@ class Armor:
     is_artifice: bool = False
     is_masterworked: bool = False
     d2_class: str = "Warlock"
+    random_exotic_perks: tuple = field(default_factory=tuple)
 
     @property
     def is_exotic(self):
@@ -207,6 +208,20 @@ class ProfileArmor:
                             f"Unknown stat hash {stat_hash} in intrinsic stats of item {item_hash}"
                         )
 
+            rarity = item_definition["inventory"]["tierTypeName"]
+            slot = item_definition.get("itemTypeDisplayName", "Unknown")
+            power = item_components["primaryStat"]["value"]
+
+            # there's a way to determine this with sockets/plugs, but it is gross, I think checking for energy of 10 cleaner on armor
+            is_masterworked = item_components["energy"]["energyCapacity"] == 10
+
+            if slot == "Warlock Bond" or slot == "Titan Mark" or slot == "Hunter Cloak":
+                slot = "Class Item"
+
+            d2_class = self.CLASS_MAP.get(item_definition["classType"], "Unknown")
+
+            random_exotic_perks = list()
+
             for socket in sockets:
                 # if it doesn't have a `plugHash` we don't care about it
                 if "plugHash" not in socket:
@@ -225,6 +240,15 @@ class ProfileArmor:
                 if plug_name == "Artifice Armor":
                     is_artifice = True
                     continue
+
+                if rarity == "Exotic" and slot == "Class Item":
+                    if (
+                        plug_definition["itemTypeAndTierDisplayName"]
+                        == "Exotic Intrinsic"
+                    ):
+                        random_exotic_perks.append(
+                            plug_definition["displayProperties"]["name"]
+                        )
 
                 investment_stats = plug_definition.get("investmentStats", None)
 
@@ -261,18 +285,6 @@ class ProfileArmor:
                     else:
                         print(f"Unknown stat hash {stat_hash} for plug {plug_hash}")
 
-            rarity = item_definition["inventory"]["tierTypeName"]
-            slot = item_definition.get("itemTypeDisplayName", "Unknown")
-            power = item_components["primaryStat"]["value"]
-
-            # there's a way to determine this with sockets/plugs, but it is gross, I think checking for energy of 10 cleaner on armor
-            is_masterworked = item_components["energy"]["energyCapacity"] == 10
-
-            if slot == "Warlock Bond" or slot == "Titan Mark" or slot == "Hunter Cloak":
-                slot = "Class Item"
-
-            d2_class = self.CLASS_MAP.get(item_definition["classType"], "Unknown")
-
             armor = Armor(
                 item_name=item_name,
                 item_hash=item_hash,
@@ -289,6 +301,7 @@ class ProfileArmor:
                 is_artifice=is_artifice,
                 is_masterworked=is_masterworked,
                 d2_class=d2_class,
+                random_exotic_perks=tuple(random_exotic_perks),
             )
             return armor
 

@@ -1,5 +1,6 @@
 import requests
 from urllib.parse import quote
+import json
 
 
 class BungieApi:
@@ -20,7 +21,7 @@ class BungieApi:
 
         # write the response to data/primary_membership_id_and_type.json
         with open("data/primary_membership_id_and_type.json", "w") as f:
-            f.write(str(data))
+            json.dump(data, f, indent=4)
 
         # the Bungie API uses 1 as the "error code" for success
         if "ErrorCode" in data and data["ErrorCode"] != 1:

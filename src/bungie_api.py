@@ -45,9 +45,12 @@ class BungieApi:
                 ]
                 == membership_type
             ):
-                print(f"Crosave override found for {membership_id}")
-                return membership_id, membership_type
 
+                print(f"Cross-save override found for {membership_id}")
+            
+            return membership_id, membership_type
+            
+        print("Found nothing in get_primary_membership_id_and_type!")
         return (None, None)
 
     def get_character_ids_and_classes(self, membership_id, membership_type):

@@ -78,6 +78,10 @@ class ArmorPinnacleStats:
     def is_exotic(self):
         return self.armor.is_exotic
 
+    @property
+    def is_ignored(self):
+        return self.armor.ignored
+
     def __hash__(self):
         return hash(self.armor.instance_id)
 
@@ -243,6 +247,8 @@ def legendary_armor_to_pinnacle_outfits_report(
     ):
         if armor_pinnacle_stats.is_exotic:
             continue
+        if (armor_pinnacle_stats.unique_pinnacle_outfits == 0 and armor_pinnacle_stats.total_pinnacle_outfits == 0) and armor_pinnacle_stats.is_ignored :
+            continue
         num += 1
         print(armor_pinnacle_stats)
     print(f"Total pieces: {num}")
@@ -265,6 +271,8 @@ def exotic_armor_to_pinnacle_outfits_report(d2_class, armor_dict, pinnacle_outfi
         ),
     ):
         if not armor_pinnacle_stats.is_exotic:
+            continue
+        if (armor_pinnacle_stats.unique_pinnacle_outfits == 0 and armor_pinnacle_stats.total_pinnacle_outfits == 0) and armor_pinnacle_stats.is_ignored :
             continue
         num += 1
         print(armor_pinnacle_stats)

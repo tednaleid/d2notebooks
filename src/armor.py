@@ -328,15 +328,18 @@ class ProfileOutfits:
         self,
         d2_class,
         slots=["Helmet", "Gauntlets", "Chest Armor", "Leg Armor", "Class Item"],
+        include_ignored_armor = True
     ):
         exotic_armor = defaultdict(list)
         non_exotic_armor = defaultdict(list)
         for armor in self.armor_dict.values():
             if armor.d2_class == d2_class and armor.slot in slots:
                 if armor.is_exotic:
-                    exotic_armor[armor.slot].append(armor)
+                    if include_ignored_armor == True or armor.ignored == False:
+                        exotic_armor[armor.slot].append(armor)
                 else:
-                    non_exotic_armor[armor.slot].append(armor)
+                    if include_ignored_armor == True or armor.ignored == False:
+                        non_exotic_armor[armor.slot].append(armor)
 
         if "Class Item" in non_exotic_armor:
             # class items all have the same stats, the only option is if one is artifice.  Pick one and remove the rest
@@ -352,12 +355,12 @@ class ProfileOutfits:
 
     # 4. generate all possible outfits using non-exotic armor
     # 5. add in all possible outfits using a single piece of exotic armor
-    def generate_class_outfits(self, d2_class):
+    def generate_class_outfits(self, d2_class, include_ignored_armor):
         outfits = []
 
         # filter armor to only include armor for the given class and slots
         exotic_armor, non_exotic_armor = self.filter_and_group_armor(
-            d2_class, ["Helmet", "Gauntlets", "Chest Armor", "Leg Armor", "Class Item"]
+            d2_class, ["Helmet", "Gauntlets", "Chest Armor", "Leg Armor", "Class Item"], include_ignored_armor
         )
 
         # append all possible non-exotic armor combinations

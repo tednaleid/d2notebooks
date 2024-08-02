@@ -600,7 +600,7 @@ class ProfileOutfits:
     # identify all non-class item armor that has the same or worse stats than another piece of armor of the same rarity and type
     def find_eclipsed_armor(self):
         eclipsed_armor = []
-        armor_list = list(self.armor_dict.values())
+        armor_list = [armor for armor in list(self.armor_dict.values()) if armor.ignored == False]
 
         # sort by power level, low to high
         armor_list.sort(key=lambda x: x.power)

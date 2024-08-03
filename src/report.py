@@ -1,3 +1,4 @@
+import json
 from collections import defaultdict
 from dataclasses import dataclass, field
 from src.armor import Armor, ProfileOutfits
@@ -277,3 +278,62 @@ def exotic_armor_to_pinnacle_outfits_report(d2_class, armor_dict, pinnacle_outfi
         num += 1
         print(armor_pinnacle_stats)
     print(f"Total pieces: {num}")
+
+def armor_to_pinnacle_outfits_json(d2_class, armor_dict, pinnacle_outfits_df):
+    armor_pinnacle_stats_list = create_armor_pinnacle_stats_list(
+        d2_class, armor_dict, pinnacle_outfits_df
+    )
+    num = 0
+    report = []
+    for armor_pinnacle_stats in sorted(
+        armor_pinnacle_stats_list,
+        key=lambda x: (
+            x.item_name,
+            -x.unique_pinnacle_outfits,
+            -x.total_pinnacle_outfits,
+        ),
+    ):
+        armor = {}
+        armor['name']        = armor_pinnacle_stats.armor.item_name
+        armor['type']        = armor_pinnacle_stats.armor.slot
+        armor['id']          = armor_pinnacle_stats.armor.instance_id
+        armor['hash']        = armor_pinnacle_stats.armor.item_hash
+        armor['is_exotic']   = armor_pinnacle_stats.armor.rarity == "Exotic"
+        armor['is_artifice'] = armor_pinnacle_stats.armor.is_artifice
+        armor['total_pinnacle_outfit_count']  = armor_pinnacle_stats.total_pinnacle_outfits
+        armor['unique_pinnacle_outfit_count'] = armor_pinnacle_stats.unique_pinnacle_outfits
+        armor['mobility']   = armor_pinnacle_stats.armor.mobility
+        armor['resilience'] = armor_pinnacle_stats.armor.resilience
+        armor['recovery']   = armor_pinnacle_stats.armor.recovery
+        armor['discipline'] = armor_pinnacle_stats.armor.discipline
+        armor['intellect']  = armor_pinnacle_stats.armor.intellect
+        armor['strength']   = armor_pinnacle_stats.armor.strength
+        armor['stat_total'] = armor_pinnacle_stats.armor.mobility + \
+                                armor_pinnacle_stats.armor.resilience + \
+                                armor_pinnacle_stats.armor.recovery + \
+                                armor_pinnacle_stats.armor.discipline + \
+                                armor_pinnacle_stats.armor.intellect + \
+                                armor_pinnacle_stats.armor.strength
+        armor['d2_class'] = armor_pinnacle_stats.armor.d2_class
+
+        unique_pinnacle_outfits = {}
+        pinnacle_outfits = {}
+        for exotic, stat_combinations in sorted(
+            armor_pinnacle_stats.exotic_to_pinnacle_stats.items(), key=lambda x: -len(x[1])
+        ):
+            stat_combination_list = sorted (
+                [str(stat_combination).strip('~') for stat_combination in stat_combinations if stat_combination.is_unique == False]
+            )
+            if len(stat_combination_list) > 0:
+                pinnacle_outfits[exotic] = stat_combination_list
+
+            unique_stat_combination_list = sorted (
+                [str(stat_combination) for stat_combination in stat_combinations if stat_combination.is_unique == True]
+            )
+            if len(unique_stat_combination_list) > 0:
+                unique_pinnacle_outfits[exotic] = unique_stat_combination_list
+
+        armor['pinnacle_outfits'] = pinnacle_outfits
+        armor['unique_pinnacle_outfits'] = unique_pinnacle_outfits
+        report.append(armor)
+    return report

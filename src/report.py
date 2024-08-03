@@ -279,6 +279,13 @@ def exotic_armor_to_pinnacle_outfits_report(d2_class, armor_dict, pinnacle_outfi
         print(armor_pinnacle_stats)
     print(f"Total pieces: {num}")
 
+def convert_stat_group(*, stat_group, is_unique):
+    # converts a list of stat groups like 'dis/int/str' into their json representation.
+    groups = []
+    for sg in stat_group:
+        groups.append({"stats": sg.split(sep="/"), "unique": is_unique })
+    return groups
+
 def armor_to_pinnacle_outfits_json(d2_class, armor_dict, pinnacle_outfits_df):
     armor_pinnacle_stats_list = create_armor_pinnacle_stats_list(
         d2_class, armor_dict, pinnacle_outfits_df
@@ -315,7 +322,6 @@ def armor_to_pinnacle_outfits_json(d2_class, armor_dict, pinnacle_outfits_df):
                                 armor_pinnacle_stats.armor.strength
         armor['d2_class'] = armor_pinnacle_stats.armor.d2_class
 
-        unique_pinnacle_outfits = {}
         pinnacle_outfits = {}
         for exotic, stat_combinations in sorted(
             armor_pinnacle_stats.exotic_to_pinnacle_stats.items(), key=lambda x: -len(x[1])
@@ -323,16 +329,15 @@ def armor_to_pinnacle_outfits_json(d2_class, armor_dict, pinnacle_outfits_df):
             stat_combination_list = sorted (
                 [str(stat_combination).strip('~') for stat_combination in stat_combinations if not stat_combination.is_unique]
             )
-            if len(stat_combination_list) > 0:
-                pinnacle_outfits[exotic] = stat_combination_list
-
             unique_stat_combination_list = sorted (
                 [str(stat_combination) for stat_combination in stat_combinations if stat_combination.is_unique]
             )
-            if len(unique_stat_combination_list) > 0:
-                unique_pinnacle_outfits[exotic] = unique_stat_combination_list
+            nonunique_stats = convert_stat_group(stat_group=stat_combination_list, is_unique=False)
+            unique_stats    = convert_stat_group(stat_group=unique_stat_combination_list, is_unique=True)
+
+            # merge and return the two lists
+            pinnacle_outfits[exotic] = unique_stats + nonunique_stats
 
         armor['pinnacle_outfits'] = pinnacle_outfits
-        armor['unique_pinnacle_outfits'] = unique_pinnacle_outfits
         report.append(armor)
     return report

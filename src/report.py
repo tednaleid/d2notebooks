@@ -248,7 +248,7 @@ def legendary_armor_to_pinnacle_outfits_report(
     ):
         if armor_pinnacle_stats.is_exotic:
             continue
-        if (armor_pinnacle_stats.unique_pinnacle_outfits == 0 and armor_pinnacle_stats.total_pinnacle_outfits == 0) and armor_pinnacle_stats.is_ignored :
+        if armor_pinnacle_stats.is_ignored and armor_pinnacle_stats.unique_pinnacle_outfits == 0:
             continue
         num += 1
         print(armor_pinnacle_stats)
@@ -273,7 +273,7 @@ def exotic_armor_to_pinnacle_outfits_report(d2_class, armor_dict, pinnacle_outfi
     ):
         if not armor_pinnacle_stats.is_exotic:
             continue
-        if (armor_pinnacle_stats.unique_pinnacle_outfits == 0 and armor_pinnacle_stats.total_pinnacle_outfits == 0) and armor_pinnacle_stats.is_ignored :
+        if armor_pinnacle_stats.is_ignored and armor_pinnacle_stats.unique_pinnacle_outfits == 0:
             continue
         num += 1
         print(armor_pinnacle_stats)

@@ -35,7 +35,7 @@ class ArmorPinnacleStats:
 
     @property
     def exotic_name_max_length(self):
-        if self._exotic_name_max_length == None:
+        if self._exotic_name_max_length is None:
             self._exotic_name_max_length = max(len(s) for s in self.exotic_to_pinnacle_stats.keys() )
         return self._exotic_name_max_length
 
@@ -283,7 +283,6 @@ def armor_to_pinnacle_outfits_json(d2_class, armor_dict, pinnacle_outfits_df):
     armor_pinnacle_stats_list = create_armor_pinnacle_stats_list(
         d2_class, armor_dict, pinnacle_outfits_df
     )
-    num = 0
     report = []
     for armor_pinnacle_stats in sorted(
         armor_pinnacle_stats_list,
@@ -322,13 +321,13 @@ def armor_to_pinnacle_outfits_json(d2_class, armor_dict, pinnacle_outfits_df):
             armor_pinnacle_stats.exotic_to_pinnacle_stats.items(), key=lambda x: -len(x[1])
         ):
             stat_combination_list = sorted (
-                [str(stat_combination).strip('~') for stat_combination in stat_combinations if stat_combination.is_unique == False]
+                [str(stat_combination).strip('~') for stat_combination in stat_combinations if not stat_combination.is_unique]
             )
             if len(stat_combination_list) > 0:
                 pinnacle_outfits[exotic] = stat_combination_list
 
             unique_stat_combination_list = sorted (
-                [str(stat_combination) for stat_combination in stat_combinations if stat_combination.is_unique == True]
+                [str(stat_combination) for stat_combination in stat_combinations if stat_combination.is_unique]
             )
             if len(unique_stat_combination_list) > 0:
                 unique_pinnacle_outfits[exotic] = unique_stat_combination_list

@@ -335,10 +335,10 @@ class ProfileOutfits:
         for armor in self.armor_dict.values():
             if armor.d2_class == d2_class and armor.slot in slots:
                 if armor.is_exotic:
-                    if include_ignored_armor == True or armor.ignored == False:
+                    if include_ignored_armor or not armor.ignored:
                         exotic_armor[armor.slot].append(armor)
                 else:
-                    if include_ignored_armor == True or armor.ignored == False:
+                    if include_ignored_armor or not armor.ignored:
                         non_exotic_armor[armor.slot].append(armor)
 
         if "Class Item" in non_exotic_armor:
@@ -600,7 +600,7 @@ class ProfileOutfits:
     # identify all non-class item armor that has the same or worse stats than another piece of armor of the same rarity and type
     def find_eclipsed_armor(self):
         eclipsed_armor = []
-        armor_list = [armor for armor in list(self.armor_dict.values()) if armor.ignored == False]
+        armor_list = [armor for armor in list(self.armor_dict.values()) if not armor.ignored]
 
         # sort by power level, low to high
         armor_list.sort(key=lambda x: x.power)

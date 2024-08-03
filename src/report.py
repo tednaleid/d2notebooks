@@ -340,4 +340,8 @@ def armor_to_pinnacle_outfits_json(d2_class, armor_dict, pinnacle_outfits_df):
 
         armor['pinnacle_outfits'] = pinnacle_outfits
         report.append(armor)
-    return report
+
+    with open(f"./data/armor-report-{d2_class.lower()}.json", 'w', encoding="utf-8") as f:
+        json.dump(report, f, indent = 2)
+
+    print(f"Wrote JSON file with {len(report)} {d2_class} items.")

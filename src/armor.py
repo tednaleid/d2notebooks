@@ -328,7 +328,7 @@ class ProfileOutfits:
         self,
         d2_class,
         slots=["Helmet", "Gauntlets", "Chest Armor", "Leg Armor", "Class Item"],
-        include_ignored_armor = True
+        include_ignored_armor=True,
     ):
         exotic_armor = defaultdict(list)
         non_exotic_armor = defaultdict(list)
@@ -360,7 +360,9 @@ class ProfileOutfits:
 
         # filter armor to only include armor for the given class and slots
         exotic_armor, non_exotic_armor = self.filter_and_group_armor(
-            d2_class, ["Helmet", "Gauntlets", "Chest Armor", "Leg Armor", "Class Item"], include_ignored_armor
+            d2_class,
+            ["Helmet", "Gauntlets", "Chest Armor", "Leg Armor", "Class Item"],
+            include_ignored_armor,
         )
 
         # append all possible non-exotic armor combinations
@@ -600,7 +602,9 @@ class ProfileOutfits:
     # identify all non-class item armor that has the same or worse stats than another piece of armor of the same rarity and type
     def find_eclipsed_armor(self):
         eclipsed_armor = []
-        armor_list = [armor for armor in list(self.armor_dict.values()) if not armor.ignored]
+        armor_list = [
+            armor for armor in list(self.armor_dict.values()) if not armor.ignored
+        ]
 
         # sort by power level, low to high
         armor_list.sort(key=lambda x: x.power)
@@ -682,7 +686,7 @@ class PinnacleOutfits:
         for column_name in column_names:
             schema[column_name] = pl.Int64
 
-        outfits_df = pl.DataFrame(outfits, schema=schema)
+        outfits_df = pl.DataFrame(outfits, schema=schema, orient="row")
 
         # the stats that can be weighted
         stats = [

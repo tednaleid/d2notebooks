@@ -1,5 +1,7 @@
 import requests
 from urllib.parse import quote
+import json
+
 
 class BungieApi:
     def __init__(self, api_key, access_token):
@@ -8,7 +10,7 @@ class BungieApi:
 
     def __default_headers(self):
         return {
-            'X-API-Key': self.api_key,
+            "X-API-Key": self.api_key,
         }
 
     def get_primary_membership_id_and_type(self, username):
@@ -17,42 +19,64 @@ class BungieApi:
         response = requests.get(url, headers=self.__default_headers())
         data = response.json()
 
-        for player in data['Response']:
-            membership_id = player['membershipId']
-            membership_type = player['membershipType']
-            print(f"Checking membership ID {membership_id} with membership type {membership_type}")
-            profile_url = f"https://www.bungie.net/Platform/Destiny2/{membership_type}/Profile/{membership_id}/?components=100"
-            profile_response = requests.get(profile_url, headers=self.__default_headers())
-            profile_data = profile_response.json()
-            if 'profile' in profile_data['Response'] and profile_data['Response']['profile']['data']['userInfo']['crossSaveOverride'] == membership_type:
-                print(f"Crosave override found for {membership_id}")
-                return membership_id, membership_type
+        # write the response to data/primary_membership_id_and_type.json
+        with open("data/primary_membership_id_and_type.json", "w") as f:
+            json.dump(data, f, indent=4)
 
-        return None
+        # the Bungie API uses 1 as the "error code" for success
+        if "ErrorCode" in data and data["ErrorCode"] != 1:
+            print(f"Error code: {data['ErrorCode']}  Message: {data['Message']}")
+            return (None, None)
+
+        for player in data["Response"]:
+            membership_id = player["membershipId"]
+            membership_type = player["membershipType"]
+            print(
+                f"Checking membership ID {membership_id} with membership type {membership_type}"
+            )
+            profile_url = f"https://www.bungie.net/Platform/Destiny2/{membership_type}/Profile/{membership_id}/?components=100"
+            profile_response = requests.get(
+                profile_url, headers=self.__default_headers()
+            )
+            profile_data = profile_response.json()
+            if (
+                "profile" in profile_data["Response"]
+                and profile_data["Response"]["profile"]["data"]["userInfo"][
+                    "crossSaveOverride"
+                ]
+                == membership_type
+            ):
+
+                print(f"Cross-save override found for {membership_id}")
+            
+            return membership_id, membership_type
+            
+        print("Found nothing in get_primary_membership_id_and_type!")
+        return (None, None)
 
     def get_character_ids_and_classes(self, membership_id, membership_type):
         url = f"https://www.bungie.net/Platform/Destiny2/{membership_type}/Profile/{membership_id}/?components=200"
         response = requests.get(url, headers=self.__default_headers())
         data = response.json()
 
-        character_data = data['Response']['characters']['data']
+        character_data = data["Response"]["characters"]["data"]
         character_ids_and_classes = {}
         for character_id, character_info in character_data.items():
-            class_type = character_info['classType']
+            class_type = character_info["classType"]
             if class_type == 0:
-                class_name = 'Titan'
+                class_name = "Titan"
             elif class_type == 1:
-                class_name = 'Hunter'
+                class_name = "Hunter"
             elif class_type == 2:
-                class_name = 'Warlock'
+                class_name = "Warlock"
             else:
-                class_name = 'Unknown'
+                class_name = "Unknown"
             character_ids_and_classes[character_id] = class_name
 
         return character_ids_and_classes
 
     def get_manifest(self):
-        url = f'https://www.bungie.net/Platform/Destiny2/Manifest/'
+        url = "https://www.bungie.net/Platform/Destiny2/Manifest/"
 
         response = requests.get(url, headers=self.__default_headers())
         response.raise_for_status()
@@ -89,15 +113,24 @@ class BungieApi:
 
     # full description of components are on the bungie API documentation: https://bungie-net.github.io/multi/schema_Destiny-DestinyComponentType.html
     def get_profile(self, access_token, membership_type, membership_id, components):
-        headers = self.__default_headers() 
-        headers['Authorization'] = f'Bearer {access_token}'
+        headers = self.__default_headers()
+        headers["Authorization"] = f"Bearer {access_token}"
 
-        joined_components = ','.join(str(c) for c in components)
+        joined_components = ",".join(str(c) for c in components)
 
-        url = f'https://www.bungie.net/Platform/Destiny2/{membership_type}/Profile/{membership_id}/?components={joined_components}'
+        url = f"https://www.bungie.net/Platform/Destiny2/{membership_type}/Profile/{membership_id}/?components={joined_components}"
 
         response = requests.get(url, headers=headers)
         response.raise_for_status()
 
-        data = response.json()['Response']
+        data = response.json()["Response"]
+        return data
+
+    def get_presentation_node(self, presentation_node_hash):
+        url = f"https://www.bungie.net/Platform/Destiny2/Manifest/DestinyPresentationNodeDefinition/{presentation_node_hash}/"
+
+        response = requests.get(url, headers=self.__default_headers())
+        response.raise_for_status()
+
+        data = response.json()["Response"]
         return data

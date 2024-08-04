@@ -215,7 +215,7 @@ class TestOutfits(unittest.TestCase):
             ]
         )
         profile_outfits = ProfileOutfits(armor_dict)
-        outfits = profile_outfits.generate_class_outfits("Warlock")
+        outfits = profile_outfits.generate_class_outfits("Warlock", True)
         self.assertEqual(len(outfits), 4)
 
         # point totals would be 44 for each stat, but we round down to the nearest 10 for the tier
@@ -303,7 +303,7 @@ class TestOutfits(unittest.TestCase):
 
         armor_dict = self.armor_list_to_dict(armor_list)
         profile_outfits = ProfileOutfits(armor_dict)
-        outfits = profile_outfits.generate_class_outfits("Warlock")
+        outfits = profile_outfits.generate_class_outfits("Warlock", True)
         # 4 slots with 20 pieces per slot, 10^4 = 10,000
         self.assertEqual(len(outfits), 10**4)
 
@@ -315,7 +315,7 @@ class TestOutfits(unittest.TestCase):
 
         armor_dict = self.armor_list_to_dict(armor_list)
         profile_outfits = ProfileOutfits(armor_dict)
-        outfits = profile_outfits.generate_class_outfits("Warlock")
+        outfits = profile_outfits.generate_class_outfits("Warlock", True)
         # same 4 slots with 10 legendary pieces per slot, but now 2 exotic pieces per slot that each need to be combined with 3 slots of 10 legendary pieces
         self.assertEqual(len(outfits), 10**4 + 8 * 10**3)
 
@@ -331,7 +331,7 @@ class TestOutfits(unittest.TestCase):
         )
 
         profile_outfits = ProfileOutfits(no_artifice_armor_dict)
-        outfits = profile_outfits.generate_class_outfits("Warlock")
+        outfits = profile_outfits.generate_class_outfits("Warlock", True)
         self.assertEqual(len(outfits), 1)
         # stats in outfit are 10 as we're assuming all armor pieces are masterworked, even though they have all stats at zero
         self.assertEqual(
@@ -369,7 +369,7 @@ class TestOutfits(unittest.TestCase):
         )
 
         profile_outfits = ProfileOutfits(one_artifice_armor_dict)
-        outfits = profile_outfits.generate_class_outfits("Warlock")
+        outfits = profile_outfits.generate_class_outfits("Warlock", True)
         self.assertEqual(len(outfits), 1)
         self.assertEqual(
             outfits[0],
@@ -413,7 +413,7 @@ class TestOutfits(unittest.TestCase):
         )
 
         profile_outfits = ProfileOutfits(one_artifice_armor_dict)
-        outfits = profile_outfits.generate_class_outfits("Warlock")
+        outfits = profile_outfits.generate_class_outfits("Warlock", True)
         self.assertEqual(len(outfits), 6)
         self.assertIn(
             (
@@ -551,7 +551,7 @@ class TestOutfits(unittest.TestCase):
         )
 
         profile_outfits = ProfileOutfits(two_artifice_armor_dict)
-        outfits = profile_outfits.generate_class_outfits("Warlock")
+        outfits = profile_outfits.generate_class_outfits("Warlock", True)
         self.assertEqual(len(outfits), 7)
         self.assertIn(
             (
@@ -755,7 +755,7 @@ class TestOutfits(unittest.TestCase):
                 ]
             )
         )
-        outfits_0 = profile_outfits_0.generate_class_outfits("Warlock")
+        outfits_0 = profile_outfits_0.generate_class_outfits("Warlock", True)
         self.assertEqual(len(outfits_0), 7)
 
         profile_outfits_1 = ProfileOutfits(
@@ -769,7 +769,7 @@ class TestOutfits(unittest.TestCase):
                 ]
             )
         )
-        outfits_1 = profile_outfits_1.generate_class_outfits("Warlock")
+        outfits_1 = profile_outfits_1.generate_class_outfits("Warlock", True)
         self.assertEqual(len(outfits_1), 7)
 
         profile_outfits_2 = ProfileOutfits(
@@ -783,7 +783,7 @@ class TestOutfits(unittest.TestCase):
                 ]
             )
         )
-        outfits_2 = profile_outfits_2.generate_class_outfits("Warlock")
+        outfits_2 = profile_outfits_2.generate_class_outfits("Warlock", True)
         self.assertEqual(len(outfits_2), 7)
 
         profile_outfits_3 = ProfileOutfits(
@@ -797,7 +797,7 @@ class TestOutfits(unittest.TestCase):
                 ]
             )
         )
-        outfits_3 = profile_outfits_3.generate_class_outfits("Warlock")
+        outfits_3 = profile_outfits_3.generate_class_outfits("Warlock", True)
         self.assertEqual(len(outfits_3), 7)
 
         profile_outfits_4 = ProfileOutfits(
@@ -811,7 +811,7 @@ class TestOutfits(unittest.TestCase):
                 ]
             )
         )
-        outfits_4 = profile_outfits_4.generate_class_outfits("Warlock")
+        outfits_4 = profile_outfits_4.generate_class_outfits("Warlock", True)
         self.assertEqual(len(outfits_4), 22)
 
         # print outfits_4 to a file in data as json

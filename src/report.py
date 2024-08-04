@@ -1,3 +1,4 @@
+import json
 from collections import defaultdict
 from dataclasses import dataclass, field
 from src.armor import Armor, ProfileOutfits
@@ -34,7 +35,7 @@ class ArmorPinnacleStats:
 
     @property
     def exotic_name_max_length(self):
-        if self._exotic_name_max_length == None:
+        if self._exotic_name_max_length is None:
             self._exotic_name_max_length = max(len(s) for s in self.exotic_to_pinnacle_stats.keys() )
         return self._exotic_name_max_length
 
@@ -77,6 +78,10 @@ class ArmorPinnacleStats:
     @property
     def is_exotic(self):
         return self.armor.is_exotic
+
+    @property
+    def is_ignored(self):
+        return self.armor.ignored
 
     def __hash__(self):
         return hash(self.armor.instance_id)
@@ -243,6 +248,8 @@ def legendary_armor_to_pinnacle_outfits_report(
     ):
         if armor_pinnacle_stats.is_exotic:
             continue
+        if armor_pinnacle_stats.is_ignored and armor_pinnacle_stats.unique_pinnacle_outfits == 0:
+            continue
         num += 1
         print(armor_pinnacle_stats)
     print(f"Total pieces: {num}")
@@ -266,6 +273,75 @@ def exotic_armor_to_pinnacle_outfits_report(d2_class, armor_dict, pinnacle_outfi
     ):
         if not armor_pinnacle_stats.is_exotic:
             continue
+        if armor_pinnacle_stats.is_ignored and armor_pinnacle_stats.unique_pinnacle_outfits == 0:
+            continue
         num += 1
         print(armor_pinnacle_stats)
     print(f"Total pieces: {num}")
+
+def convert_stat_group(*, stat_group, is_unique):
+    # converts a list of stat groups like 'dis/int/str' into their json representation.
+    groups = []
+    for sg in stat_group:
+        groups.append({"stats": sg.split(sep="/"), "unique": is_unique })
+    return groups
+
+def armor_to_pinnacle_outfits_json(d2_class, armor_dict, pinnacle_outfits_df):
+    armor_pinnacle_stats_list = create_armor_pinnacle_stats_list(
+        d2_class, armor_dict, pinnacle_outfits_df
+    )
+    report = []
+    for armor_pinnacle_stats in sorted(
+        armor_pinnacle_stats_list,
+        key=lambda x: (
+            x.item_name,
+            -x.unique_pinnacle_outfits,
+            -x.total_pinnacle_outfits,
+        ),
+    ):
+        armor = {}
+        armor['name']        = armor_pinnacle_stats.armor.item_name
+        armor['type']        = armor_pinnacle_stats.armor.slot
+        armor['id']          = armor_pinnacle_stats.armor.instance_id
+        armor['hash']        = armor_pinnacle_stats.armor.item_hash
+        armor['is_exotic']   = armor_pinnacle_stats.armor.rarity == "Exotic"
+        armor['is_artifice'] = armor_pinnacle_stats.armor.is_artifice
+        armor['total_pinnacle_outfit_count']  = armor_pinnacle_stats.total_pinnacle_outfits
+        armor['unique_pinnacle_outfit_count'] = armor_pinnacle_stats.unique_pinnacle_outfits
+        armor['mobility']   = armor_pinnacle_stats.armor.mobility
+        armor['resilience'] = armor_pinnacle_stats.armor.resilience
+        armor['recovery']   = armor_pinnacle_stats.armor.recovery
+        armor['discipline'] = armor_pinnacle_stats.armor.discipline
+        armor['intellect']  = armor_pinnacle_stats.armor.intellect
+        armor['strength']   = armor_pinnacle_stats.armor.strength
+        armor['stat_total'] = armor_pinnacle_stats.armor.mobility + \
+                                armor_pinnacle_stats.armor.resilience + \
+                                armor_pinnacle_stats.armor.recovery + \
+                                armor_pinnacle_stats.armor.discipline + \
+                                armor_pinnacle_stats.armor.intellect + \
+                                armor_pinnacle_stats.armor.strength
+        armor['d2_class'] = armor_pinnacle_stats.armor.d2_class
+
+        pinnacle_outfits = {}
+        for exotic, stat_combinations in sorted(
+            armor_pinnacle_stats.exotic_to_pinnacle_stats.items(), key=lambda x: -len(x[1])
+        ):
+            stat_combination_list = sorted (
+                [str(stat_combination).strip('~') for stat_combination in stat_combinations if not stat_combination.is_unique]
+            )
+            unique_stat_combination_list = sorted (
+                [str(stat_combination) for stat_combination in stat_combinations if stat_combination.is_unique]
+            )
+            nonunique_stats = convert_stat_group(stat_group=stat_combination_list, is_unique=False)
+            unique_stats    = convert_stat_group(stat_group=unique_stat_combination_list, is_unique=True)
+
+            # merge and return the two lists
+            pinnacle_outfits[exotic] = unique_stats + nonunique_stats
+
+        armor['pinnacle_outfits'] = pinnacle_outfits
+        report.append(armor)
+
+    with open(f"./data/armor-report-{d2_class.lower()}.json", 'w', encoding="utf-8") as f:
+        json.dump(report, f, indent = 2)
+
+    print(f"Wrote JSON file with {len(report)} {d2_class} items.")

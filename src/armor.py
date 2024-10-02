@@ -35,6 +35,7 @@ class Armor:
     is_masterworked: bool = False
     d2_class: str = "Warlock"
     random_exotic_perks: tuple = field(default_factory=tuple)
+    ignored: bool = False
 
     @property
     def is_exotic(self):
@@ -355,7 +356,7 @@ class ProfileOutfits:
 
     # 4. generate all possible outfits using non-exotic armor
     # 5. add in all possible outfits using a single piece of exotic armor
-    def generate_class_outfits(self, d2_class, include_ignored_armor):
+    def generate_class_outfits(self, d2_class, include_ignored_armor=False):
         outfits = []
 
         # filter armor to only include armor for the given class and slots
